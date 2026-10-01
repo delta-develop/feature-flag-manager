@@ -16,6 +16,8 @@ docker compose up --build
 
 - App: http://localhost:8080 (admin at `/admin`, demo at `/demo`; open them side by side)
 - API docs (OpenAPI / Swagger UI): http://localhost:8080/docs
+- Stop: `Ctrl+C`, then `docker compose down`. Add `-v` to also delete the database and start again from the seed flags.
+- Ports 8080 (app) and 8000 (API) must be free.
 
 **Without Docker** (Python ≥3.11 with [uv](https://docs.astral.sh/uv/), Node ≥20.19):
 
@@ -24,9 +26,29 @@ cd backend && uv run fastapi dev app/main.py     # http://localhost:8000
 cd frontend && npm install && npm run dev        # http://localhost:5173
 ```
 
-**Tests:** `cd backend && uv run pytest`
+**Checks:** `cd backend && uv run pytest` (API contract tests) · `cd frontend && npm run build` (type-check + production build)
 
 The database is seeded with four demo flags on first run. Set `DATABASE_URL` to change where SQLite lives.
+
+## Try it in 2 minutes
+
+1. Open `/admin/flags` and `/demo` side by side. The demo shows the banner and the beta search box, because those seed flags are ON.
+2. Toggle **`maintenance-mode`** ON in the admin. Within ~3 s the demo is replaced by "Down for maintenance" (a kill switch).
+3. Toggle **`new-reports`** ON: the demo swaps the legacy reports table for the v2 bar widget.
+4. Open **Evaluations**: every demo poll appears in the live feed, and the per-minute chart fills up as minutes pass.
+5. Delete **`beta-search`**: the demo hides the search box, and the feed flags `beta-search` as an *unknown flag*. A client still asking for a deleted flag is exactly what you want to notice.
+6. Stop the backend (`docker compose stop backend`): the demo keeps its last known values and shows a "stale" warning instead of breaking.
+
+Or from the terminal:
+
+```bash
+curl -X POST localhost:8080/api/flags -H 'Content-Type: application/json' \
+     -d '{"key": "new-checkout", "description": "New checkout flow"}'          # 201, created disabled
+curl -X PATCH localhost:8080/api/flags/new-checkout -H 'Content-Type: application/json' \
+     -d '{"enabled": true}'                                                     # 200
+curl "localhost:8080/api/evaluate?keys=new-checkout,ghost&client=my-service"
+# {"flags":{"new-checkout":true,"ghost":false}}   unknown keys are false, never an error
+```
 
 ## How it's built
 
@@ -76,12 +98,13 @@ The full list with reasoning is in [`docs/decisions.md`](docs/decisions.md). Hig
 
 ## If I had another day
 
-1. Audit log of flag changes (who/when/what), reusing the event-table pattern.
-2. Environments (dev/staging/prod) and percentage rollouts. Both reshape the data model, so they need deliberate design.
-3. Evaluation aggregation (per-minute buckets) + retention, and a "stale flag" view (not evaluated in N days → candidate for removal).
-4. Auth: SSO for the dashboard, API tokens per client.
-5. Frontend tests (component tests for the flags page, an e2e smoke test of admin → demo).
-6. Prometheus metrics endpoint and OpenTelemetry tracing.
+1. **Percentage rollouts: turn a flag on for only part of the traffic.** Add a `rollout_percentage` (0–100) to each flag, and let consumers pass a stable subject ID, as in `/api/evaluate?keys=new-checkout&subject=user-42`. The flag is ON for a subject when `hash(flag_key + subject) % 100 < rollout_percentage`. Hashing makes the result deterministic and sticky: the same user always gets the same answer, and ramping 1% → 10% → 50% → 100% only ever adds users, so nobody flips back and forth. Salting with the flag key keeps the same users from always being in every early cohort. Evaluations already store each call, so the charts could show the ON/OFF split per flag for free.
+2. **Better metrics.** A Prometheus `/metrics` endpoint with latency histograms (p95/p99 instead of avg/max), metrics that survive restarts and multiple replicas, per-minute aggregation plus retention for the evaluation table, and a "stale flags" view (not evaluated in N days → candidate for removal).
+3. **Better logging.** Today logs are JSON on stdout. Next: ship them to a central store (Loki/ELK), make the log level configurable per environment, add OpenTelemetry tracing so a request ID links proxy → API → DB spans, and keep a proper **audit log** of flag changes (who, when, before/after) in its own table instead of only in log lines.
+4. **Postgres instead of SQLite.** The append-heavy evaluation table is the first thing SQLite's single writer would choke on. Add Alembic migrations and replace the SQLite-specific `strftime` bucketing with `date_trunc`.
+5. **Dark mode.** Colours are already CSS custom properties, and the chart palette has validated dark-mode steps, so this is mostly a second token set.
+6. **A more realistic demo.** Run the consumer as a separate service that uses a small SDK with a local cache and a fallback to the last known values, and simulate many users so percentage rollouts are visible (e.g. "37% of simulated users see Reports v2").
+7. Also on the list: environments (dev/staging/prod), auth (SSO for the dashboard, API tokens per client), and frontend tests (component tests for the flags page, an end-to-end admin → demo smoke test).
 
 ## How we worked
 
