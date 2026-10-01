@@ -9,7 +9,7 @@ from sqlalchemy import text
 from app.db import SessionDep, init_db
 from app.errors import error_response, register_error_handlers
 from app.observability import configure_logging, metrics, request_id_var, resolve_request_id
-from app.routes import admin
+from app.routes import admin, evaluate
 
 logger = logging.getLogger("app")
 
@@ -30,6 +30,7 @@ app = FastAPI(
 )
 register_error_handlers(app)
 app.include_router(admin.router)
+app.include_router(evaluate.router)
 
 
 @app.middleware("http")

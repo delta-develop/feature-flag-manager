@@ -73,3 +73,16 @@ class FlagEvaluation(SQLModel, table=True):
     flag_exists: bool
     client: str = Field(default="unknown", max_length=64)
     evaluated_at: datetime = Field(default_factory=utcnow, index=True)
+
+
+class EvaluationRead(SQLModel):
+    id: int
+    flag_key: str
+    result: bool
+    flag_exists: bool
+    client: str
+    evaluated_at: UtcDatetime
+
+
+class EvaluateResponse(SQLModel):
+    flags: dict[str, bool]

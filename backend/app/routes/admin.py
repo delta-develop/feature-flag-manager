@@ -1,13 +1,14 @@
 import logging
 from datetime import datetime
+from typing import Annotated
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, col, func, select
 
 from app.db import SessionDep
 from app.errors import ApiError
-from app.models import Flag, FlagCreate, FlagEvaluation, FlagRead, FlagUpdate, utcnow
+from app.models import EvaluationRead, Flag, FlagCreate, FlagEvaluation, FlagRead, FlagUpdate, utcnow
 
 logger = logging.getLogger("app.admin")
 router = APIRouter(prefix="/api", tags=["admin"])
@@ -78,3 +79,9 @@ def delete_flag(key: str, session: SessionDep) -> None:
     session.delete(get_flag_or_404(session, key))
     session.commit()
     logger.info("flag deleted", extra={"fields": {"flag_key": key}})
+
+
+@router.get("/evaluations", response_model=list[EvaluationRead])
+def list_evaluations(session: SessionDep, limit: Annotated[int, Query(ge=1, le=200)] = 50):
+    stmt = select(FlagEvaluation).order_by(col(FlagEvaluation.id).desc()).limit(limit)
+    return session.exec(stmt).all()

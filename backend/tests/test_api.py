@@ -4,7 +4,7 @@ from sqlmodel import select
 
 from app.db import SEED_FLAGS, seed
 from app.main import app
-from app.models import Flag
+from app.models import Flag, FlagEvaluation
 
 
 def test_healthz_ok(client):
@@ -118,3 +118,37 @@ def test_seed_inserts_defaults_only_once(session):
     seed(session)
     keys = sorted(f.key for f in session.exec(select(Flag)))
     assert keys == sorted(f["key"] for f in SEED_FLAGS)
+
+
+def test_evaluate_known_and_unknown_keys_records_events(client, session):
+    client.post("/api/flags", json={"key": "beta-search", "enabled": True})
+    r = client.get("/api/evaluate", params={"keys": "beta-search,ghost-flag", "client": "tests"})
+    assert r.status_code == 200
+    assert r.json() == {"flags": {"beta-search": True, "ghost-flag": False}}
+    rows = session.exec(select(FlagEvaluation).order_by(FlagEvaluation.flag_key)).all()
+    assert [(e.flag_key, e.result, e.flag_exists, e.client) for e in rows] == [
+        ("beta-search", True, True, "tests"),
+        ("ghost-flag", False, False, "tests"),
+    ]
+
+
+def test_evaluate_rejects_invalid_keys(client):
+    r = client.get("/api/evaluate", params={"keys": "Bad Key"})
+    assert r.status_code == 422
+    assert r.json()["error"]["code"] == "validation_error"
+
+
+def test_list_shows_evaluation_stats(client):
+    client.post("/api/flags", json={"key": "beta-search"})
+    client.get("/api/evaluate", params={"keys": "beta-search"})
+    client.get("/api/evaluate", params={"keys": "beta-search"})
+    flag = client.get("/api/flags").json()[0]
+    assert flag["evaluation_count"] == 2
+    assert flag["last_evaluated_at"] is not None
+
+
+def test_evaluations_feed_is_newest_first(client):
+    client.get("/api/evaluate", params={"keys": "a-1"})
+    client.get("/api/evaluate", params={"keys": "b-2"})
+    feed = client.get("/api/evaluations", params={"limit": 1}).json()
+    assert [e["flag_key"] for e in feed] == ["b-2"]
