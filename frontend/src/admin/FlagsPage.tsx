@@ -2,12 +2,15 @@ import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError, errorText, KEY_PATTERN, type Flag, type FlagChanges } from "../api";
 import { timeAgo } from "../format";
+import { seriesColor, Sparkline, useEvaluationTimeseries } from "../charts";
 
 const FLAGS_QUERY = ["flags"];
 
 export default function FlagsPage() {
   // Refetch so evaluation counts move while the demo is running.
   const flags = useQuery({ queryKey: FLAGS_QUERY, queryFn: api.listFlags, refetchInterval: 5000 });
+  const timeseries = useEvaluationTimeseries(30);
+  const knownKeys = flags.data?.map((f) => f.key) ?? [];
 
   return (
     <>
@@ -26,12 +29,20 @@ export default function FlagsPage() {
                 <th scope="col">Description</th>
                 <th scope="col">Status</th>
                 <th scope="col">Evaluations</th>
+                <th scope="col">Activity (30 min)</th>
                 <th scope="col">Last evaluated</th>
                 <th scope="col"><span className="visually-hidden">Actions</span></th>
               </tr>
             </thead>
             <tbody>
-              {flags.data.map((flag) => <FlagRow key={flag.key} flag={flag} />)}
+              {flags.data.map((flag) => (
+                <FlagRow
+                  key={flag.key}
+                  flag={flag}
+                  activity={timeseries.data ? (timeseries.data.series[flag.key] ?? timeseries.data.buckets.map(() => 0)) : null}
+                  color={seriesColor(flag.key, knownKeys)}
+                />
+              ))}
             </tbody>
           </table>
         )}
@@ -107,7 +118,7 @@ function CreateFlagForm() {
   );
 }
 
-function FlagRow({ flag }: { flag: Flag }) {
+function FlagRow({ flag, activity, color }: { flag: Flag; activity: number[] | null; color: string }) {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(flag.description);
@@ -184,6 +195,15 @@ function FlagRow({ flag }: { flag: Flag }) {
         </button>
       </td>
       <td>{flag.evaluation_count}</td>
+      <td>
+        {activity && (
+          <Sparkline
+            values={activity}
+            color={color}
+            label={`${activity.reduce((a, b) => a + b, 0)} evaluations of ${flag.key} in the last 30 minutes`}
+          />
+        )}
+      </td>
       <td>{timeAgo(flag.last_evaluated_at)}</td>
       <td>
         <button type="button" className="danger" disabled={remove.isPending} onClick={confirmDelete}>

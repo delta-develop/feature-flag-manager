@@ -1,10 +1,10 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlmodel import select
 
 from app.db import SEED_FLAGS, seed
 from app.main import app
-from app.models import Flag, FlagEvaluation
+from app.models import Flag, FlagEvaluation, utcnow
 
 
 def test_healthz_ok(client):
@@ -160,3 +160,33 @@ def test_metrics_label_docs_routes_by_path_not_unmatched(client):
     routes = client.get("/api/metrics").json()["routes"]
     assert "GET /openapi.json" in routes
     assert "GET unmatched" in routes
+
+
+def test_timeseries_buckets_per_minute_and_lists_unknown_keys(client):
+    client.post("/api/flags", json={"key": "beta-search"})
+    client.get("/api/evaluate", params={"keys": "beta-search,ghost"})
+    client.get("/api/evaluate", params={"keys": "beta-search"})
+    body = client.get("/api/evaluations/timeseries", params={"minutes": 5}).json()
+    assert body["bucket_seconds"] == 60
+    assert len(body["buckets"]) == 5
+    assert body["buckets"][0].endswith(("Z", "+00:00"))
+    assert sum(body["series"]["beta-search"]) == 2
+    assert sum(body["series"]["ghost"]) == 1
+    assert body["unknown_keys"] == ["ghost"]
+
+
+def test_timeseries_excludes_evaluations_outside_window(client, session):
+    session.add(
+        FlagEvaluation(
+            flag_key="old-flag", result=False, flag_exists=False, evaluated_at=utcnow() - timedelta(hours=2)
+        )
+    )
+    session.commit()
+    body = client.get("/api/evaluations/timeseries", params={"minutes": 30}).json()
+    assert "old-flag" not in body["series"]
+
+
+def test_timeseries_rejects_out_of_range_window(client):
+    r = client.get("/api/evaluations/timeseries", params={"minutes": 1})
+    assert r.status_code == 422
+    assert r.json()["error"]["code"] == "validation_error"

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api, errorText } from "../api";
 import { formatUptime } from "../format";
+import { HBars, PRIMARY_COLOR } from "../charts";
 
 export default function HealthPage() {
   const health = useQuery({ queryKey: ["healthz"], queryFn: api.health, refetchInterval: 5000, retry: false });
@@ -33,6 +34,25 @@ export default function HealthPage() {
         </div>
       </div>
       {metrics.isError && <p role="alert" className="error">{errorText(metrics.error)}</p>}
+      {routes.length > 0 && (
+        <section className="card" aria-labelledby="latency-title">
+          <h2 id="latency-title">Latency by endpoint</h2>
+          <p className="muted">Bar: average · tick: max (ms, since last restart)</p>
+          <HBars
+            label="Average and max latency by endpoint"
+            rows={[...routes]
+              .sort(([, a], [, b]) => b.avg_ms - a.avg_ms)
+              .map(([route, m]) => ({
+                key: route,
+                label: <code>{route}</code>,
+                value: m.avg_ms,
+                marker: m.max_ms,
+                valueLabel: `${m.avg_ms} ms · max ${m.max_ms}`,
+                color: PRIMARY_COLOR,
+              }))}
+          />
+        </section>
+      )}
       <table>
         <caption>HTTP metrics per endpoint since the last restart (in-memory, refreshed every 5s)</caption>
         <thead>

@@ -86,3 +86,31 @@ button.danger { color: var(--danger); border-color: var(--danger); }
 .maintenance { background: #2b2b2b; color: #fff; padding: 3rem 1.5rem; border-radius: 10px; text-align: center; }
 .flag-values { list-style: none; padding: 0; margin: 0; display: flex; gap: 1.25rem; flex-wrap: wrap; }
 .demo > footer { margin-top: 1.25rem; }
+
+/* Charts */
+.chart-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 1.25rem; }
+.chart-grid .card { margin-bottom: 1.25rem; }
+@media (max-width: 900px) { .chart-grid { grid-template-columns: 1fr; } }
+.chart { margin: 0; }
+.chart-plot { position: relative; }
+.chart svg { display: block; width: 100%; height: auto; }
+.chart .grid { stroke: #e1e0d9; stroke-width: 1; }
+.chart .baseline { stroke: #c3c2b7; stroke-width: 1; }
+.chart .tick { fill: #898781; font-size: 11px; font-variant-numeric: tabular-nums; }
+.chart-tooltip { position: absolute; top: 0; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.75rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); pointer-events: none; font-size: 0.85rem; white-space: nowrap; }
+.chart-tooltip p { margin: 0 0 0.25rem; }
+.chart-tooltip ul { list-style: none; margin: 0; padding: 0; }
+.line-key { display: inline-block; width: 12px; height: 2px; margin-right: 0.4rem; vertical-align: middle; }
+.legend { list-style: none; display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; padding: 0; margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--muted); }
+.swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 0.35rem; vertical-align: middle; }
+.data-table { margin-top: 0.5rem; font-size: 0.85rem; }
+.data-table summary { cursor: pointer; color: var(--accent); }
+.data-table table { margin-top: 0.5rem; }
+/* One grid for all rows so every bar starts at the same x. */
+.hbars { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: max-content 1fr max-content; align-items: center; gap: 0.6rem; font-size: 0.85rem; }
+.hbars li { display: contents; }
+.hbar-track { position: relative; height: 16px; }
+.hbar { display: block; height: 100%; min-width: 2px; border-radius: 0 4px 4px 0; }
+.hbar-marker { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--text); transform: translateX(-1px); }
+.hbar-value { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sparkline { display: block; }
