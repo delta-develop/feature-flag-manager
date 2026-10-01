@@ -106,4 +106,4 @@ Wall-clock times from the Git history.
 
 **Total: ~62 min.** Planning took most of the hour on purpose: once the contracts were written down, the build could be parallelized.
 
-**After the time box: T5, charts (~15 min, 23:11–23:26).** The first version showed metrics only as tables. We added charts afterwards and track them separately so the one-hour scope stays honest. The evaluation event table (D5) is what made per-minute charts possible.
+**After the time box: T5, charts (~10 min, 23:11–23:21).** The first version showed metrics only as tables. We added charts afterwards and track them separately so the one-hour scope stays honest. The evaluation event table (D5) is what made per-minute charts possible.
