@@ -67,3 +67,22 @@ button.danger { color: var(--danger); border-color: var(--danger); }
 .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.9rem 1rem; }
 .tile p { margin: 0; color: var(--muted); font-size: 0.85rem; }
 .tile strong { font-size: 1.6rem; }
+
+/* Demo consumer */
+.demo { max-width: 960px; margin: 0 auto; padding: 1.5rem; }
+.demo-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
+.demo-header h1 { margin: 0; }
+.stale { background: var(--warn-bg); color: #7a4b00; padding: 0.6rem 1rem; border-radius: 8px; }
+.banner { background: var(--accent); color: #fff; padding: 0.75rem 1rem; border-radius: 10px; margin-bottom: 1.25rem; display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.search { display: grid; gap: 0.4rem; }
+.widgets { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
+.widgets .card { margin: 0; }
+.big { font-size: 2.2rem; font-weight: 700; margin: 0; }
+.bars { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.5rem; }
+.bars li { display: grid; grid-template-columns: 5rem 1fr 2.5rem; align-items: center; gap: 0.5rem; }
+.bar { display: block; height: 0.8rem; background: var(--accent); border-radius: 4px; }
+.flag-tag { font-size: 0.75rem; font-family: ui-monospace, monospace; background: rgba(0, 0, 0, 0.08); padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: 400; }
+.banner .flag-tag { background: rgba(255, 255, 255, 0.2); }
+.maintenance { background: #2b2b2b; color: #fff; padding: 3rem 1.5rem; border-radius: 10px; text-align: center; }
+.flag-values { list-style: none; padding: 0; margin: 0; display: flex; gap: 1.25rem; flex-wrap: wrap; }
+.demo > footer { margin-top: 1.25rem; }
