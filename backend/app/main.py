@@ -46,8 +46,11 @@ async def observe_requests(request: Request, call_next):
             response = error_response(500, "internal_error", "Internal server error")
         duration_ms = (time.perf_counter() - start) * 1000
         route = request.scope.get("route")
-        # Route template (not raw path) keeps metric cardinality bounded.
-        template = getattr(route, "path", "unmatched")
+        # Route template (not raw path) keeps metric cardinality bounded. FastAPI's built-in docs
+        # routes don't set scope["route"], so only real 404s are grouped as "unmatched".
+        template = getattr(route, "path", None) or (
+            "unmatched" if response.status_code == 404 else request.url.path
+        )
         metrics.record(f"{request.method} {template}", response.status_code, duration_ms)
         logger.info(
             "request",

@@ -152,3 +152,11 @@ def test_evaluations_feed_is_newest_first(client):
     client.get("/api/evaluate", params={"keys": "b-2"})
     feed = client.get("/api/evaluations", params={"limit": 1}).json()
     assert [e["flag_key"] for e in feed] == ["b-2"]
+
+
+def test_metrics_label_docs_routes_by_path_not_unmatched(client):
+    client.get("/openapi.json")
+    client.get("/api/does-not-exist")
+    routes = client.get("/api/metrics").json()["routes"]
+    assert "GET /openapi.json" in routes
+    assert "GET unmatched" in routes
