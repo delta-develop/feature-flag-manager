@@ -100,6 +100,6 @@ Wall-clock times from the Git history.
 | Planning: brainstorm, spec, decisions, plan | 22:08–22:50 | ~42 min |
 | T1–T3 build (parallel agents, two waves) | 22:50–22:56 | ~6 min |
 | Integration review, fix, merges | 22:56–23:03 | ~7 min |
-| T4 packaging & docs (incl. ~6 min fixing a local Docker Desktop conflict) | 23:03–23:10 | ~7 min |
+| T4 packaging & docs (incl. resolving a local Docker Desktop conflict) | 23:03–23:10 | ~7 min |
 
-Planning took most of the hour on purpose: once the contracts were written down, the build could be parallelized.
+**Total: ~62 min.** Planning took most of the hour on purpose: once the contracts were written down, the build could be parallelized.
