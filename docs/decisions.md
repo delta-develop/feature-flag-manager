@@ -105,7 +105,7 @@ request IDs, health). The frontend is verified by `tsc` plus a manual walkthroug
 **Why:** The API is the contract other teams depend on. That's where tests buy the most in an hour.
 
 ### D16 — Frontend libraries: react-router + TanStack Query, plain CSS
-**Decision:** `react-router-dom` for routes, `@tanstack/react-query` for fetching, polling and
+**Decision:** `react-router` (v7) for routes, `@tanstack/react-query` for fetching, polling and
 cache invalidation. No component library.
 **Why:** Hand-rolling polling, loading/error states and refetch-after-mutation is more code and more
 bugs than one well-known library. A component library would be weight we don't need.
@@ -117,3 +117,11 @@ component small.
 
 ### D18 — Documentation in English
 **Decision:** All repository documentation is in English.
+
+### D19 — One branch and one PR per ticket
+**Decision:** Nothing is committed straight to `main`. Design docs and the plan go through
+`docs/design-spec`. Each ticket gets its own branch (`feat/t1-backend`, `feat/t2-admin-dashboard`,
+`feat/t3-demo-consumer`, `chore/t4-packaging-docs`) and is merged through a PR. Commits are
+prefixed with the ticket ID.
+**Why:** It mirrors how a team would work, keeps each review small, and makes the work breakdown
+visible in the Git history and on GitHub.

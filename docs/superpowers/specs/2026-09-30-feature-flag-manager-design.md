@@ -49,11 +49,12 @@ Same-origin via proxy means **no CORS configuration** anywhere.
 ```
 backend/
   app/
-    main.py             app factory, middleware, exception handlers, router wiring
+    main.py             app, lifespan, middleware, /healthz, /api/metrics, router wiring
+    errors.py           ApiError + error envelope handlers
     db.py               engine, session dependency, create tables, seed on empty DB
     models.py           Flag, FlagEvaluation tables + request/response schemas
     observability.py    request-ID contextvar, JSON log formatter, HTTP metrics store
-    routes/admin.py     /api/flags, /api/evaluations, /api/metrics
+    routes/admin.py     /api/flags, /api/evaluations
     routes/evaluate.py  /api/evaluate
   tests/test_api.py
   pyproject.toml        managed with uv
@@ -179,7 +180,7 @@ Codes: `flag_not_found`, `flag_already_exists`, `validation_error` (with `detail
 
 ## 6. Frontend
 
-Single Vite + React + TypeScript app. Libraries: `react-router-dom`, `@tanstack/react-query`. Plain CSS.
+Single Vite + React + TypeScript app. Libraries: `react-router` (v7), `@tanstack/react-query`. Plain CSS.
 
 ### Routes
 
