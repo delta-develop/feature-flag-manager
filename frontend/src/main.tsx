@@ -4,6 +4,8 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Layout from "./admin/Layout";
 import FlagsPage from "./admin/FlagsPage";
+import HealthPage from "./admin/HealthPage";
+import EvaluationsPage from "./admin/EvaluationsPage";
 import "./styles.css";
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1 } } });
@@ -16,6 +18,8 @@ createRoot(document.getElementById("root")!).render(
           <Route path="/admin" element={<Layout />}>
             <Route index element={<Navigate to="flags" replace />} />
             <Route path="flags" element={<FlagsPage />} />
+            <Route path="health" element={<HealthPage />} />
+            <Route path="evaluations" element={<EvaluationsPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/admin/flags" replace />} />
         </Routes>
