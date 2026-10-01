@@ -27,6 +27,13 @@ export type RouteMetrics = {
 
 export type Metrics = { uptime_seconds: number; routes: Record<string, RouteMetrics> };
 
+export type Timeseries = {
+  bucket_seconds: number;
+  buckets: string[];
+  series: Record<string, number[]>;
+  unknown_keys: string[];
+};
+
 export type FieldError = { loc: (string | number)[]; msg: string; type: string };
 
 export type FlagChanges = Partial<Pick<Flag, "description" | "enabled">>;
@@ -81,6 +88,7 @@ export const api = {
     request<Flag>(flagPath(key), { method: "PATCH", body: JSON.stringify(changes) }),
   deleteFlag: (key: string) => request<void>(flagPath(key), { method: "DELETE" }),
   listEvaluations: (limit = 50) => request<Evaluation[]>(`/api/evaluations?limit=${limit}`),
+  getTimeseries: (minutes = 30) => request<Timeseries>(`/api/evaluations/timeseries?minutes=${minutes}`),
   getMetrics: () => request<Metrics>("/api/metrics"),
   health: () => request<{ status: string }>("/healthz"),
   evaluate: (keys: string[], client: string) =>

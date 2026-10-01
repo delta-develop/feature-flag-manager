@@ -2,7 +2,7 @@
 
 A small internal feature flag service, built as the first iteration of something a team would keep developing.
 
-- **Admin dashboard** (`/admin`): create, edit, toggle and delete flags; watch system health and a live evaluation feed.
+- **Admin dashboard** (`/admin`): create, edit, toggle and delete flags; watch system health, a live evaluation feed and charts (evaluations per minute by flag, per-flag activity sparklines, latency by endpoint).
 - **Evaluation API** (`/api/evaluate`): what client systems call. Unknown flags are `false`, and every evaluation is recorded.
 - **Demo consumer** (`/demo`): an "ops panel" whose widgets are gated by flags and react within seconds.
 
@@ -44,6 +44,7 @@ The database is seeded with four demo flags on first run. Set `DATABASE_URL` to 
 | GET / PATCH / DELETE | `/api/flags/{key}` | Read / update `description`, `enabled` / delete |
 | GET | `/api/evaluate?keys=a,b&client=name` | Evaluate flags for a consumer → `{"flags": {"a": true, "b": false}}` |
 | GET | `/api/evaluations?limit=50` | Recent evaluations, newest first |
+| GET | `/api/evaluations/timeseries?minutes=30` | Evaluations per minute per flag (zero-filled), plus which keys don't exist |
 | GET | `/api/metrics` | In-memory HTTP metrics per endpoint |
 | GET | `/healthz` | Liveness + DB check |
 
@@ -54,6 +55,7 @@ Every error under `/api` has the same shape: `{"error": {"code", "message", "req
 - `X-Request-ID` on every response (reused from the caller or nginx if present). Error bodies include it, and the dashboard shows it as `ref: …` so a user report leads straight to the log line.
 - JSON logs: one access line per request (method, route, status, duration), plus admin changes (`flag created/updated/deleted`).
 - HTTP metrics (count, 4xx, 5xx, avg/max latency per route template) and product metrics (evaluations per flag, live feed), both visible in the dashboard.
+- Charts, hand-drawn in SVG (no chart library): evaluations per minute stacked by flag, evaluations by flag (unknown keys highlighted), activity sparklines in the flags table, latency by endpoint. Each flag keeps its colour across every chart, and every chart has a legend and a data-table fallback.
 
 ## Assumptions
 
@@ -103,3 +105,5 @@ Wall-clock times from the Git history.
 | T4 packaging & docs (incl. resolving a local Docker Desktop conflict) | 23:03–23:10 | ~7 min |
 
 **Total: ~62 min.** Planning took most of the hour on purpose: once the contracts were written down, the build could be parallelized.
+
+**After the time box: T5, charts (~15 min, 23:11–23:26).** The first version showed metrics only as tables. We added charts afterwards and track them separately so the one-hour scope stays honest. The evaluation event table (D5) is what made per-minute charts possible.

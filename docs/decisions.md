@@ -148,3 +148,15 @@ lockfile (`uv.lock`, committed) and the Python version (`requires-python >= 3.11
 reviewers get exactly the same versions. The Docker image runs the same `uv sync --frozen`, so local
 and container environments match.
 **Not chosen:** pip/requirements.txt (no real lock), Poetry (slower, heavier for this scope).
+
+### D22 — Charts added after the time box, hand-rolled SVG
+**Decision:** T5 was added after the one-hour box and is reported separately in the README. It adds
+`GET /api/evaluations/timeseries` (per-minute buckets per flag over the event table) and four charts:
+stacked evaluations per minute, evaluations by flag, per-flag sparklines, and latency by endpoint.
+The charts are small SVG/CSS components with no chart library.
+**Why:** The event table (D5) already held the history, so the charts are the payoff of that decision.
+Four simple chart types don't justify a charting dependency bigger than the rest of the app. Colours
+come from a CVD-validated categorical palette in fixed order. A flag keeps its colour everywhere, and
+unknown keys fold into gray. Each chart has a legend, a hover tooltip and a data-table fallback.
+**Tradeoff:** The bucketing uses SQLite's `strftime` (on Postgres it would be `date_trunc`). The
+dashboard is light-mode only.
