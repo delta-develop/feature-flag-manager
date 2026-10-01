@@ -125,3 +125,26 @@ component small.
 prefixed with the ticket ID.
 **Why:** It mirrors how a team would work, keeps each review small, and makes the work breakdown
 visible in the Git history and on GitHub.
+
+### D20 — Parallel ticket execution with stacked PRs
+**Decision:** T1–T3 were implemented by separate AI agents, each in its own git worktree and branch,
+in two waves. Wave 1 ran T1 (backend) alongside the T2 frontend scaffold. Wave 2 ran the rest of T2
+alongside T3, with T3 **stacked** on the T2 branch (its PR targeted `feat/t2-admin-dashboard` and
+was retargeted to `main` once T2 merged).
+**Why:** The plan pinned the contracts between tickets (JSON shapes, exported names, file
+ownership), so the tickets could proceed independently. T3 genuinely depended on T2's scaffold
+(`package.json`, API client), so it was stacked rather than duplicated, which avoids lockfile conflicts.
+Agents were told exactly which lines of the one shared file (`main.tsx`) to touch, so the merges
+came out clean.
+**Tradeoff:** Each agent could only verify its own branch (tests, `tsc`, build). Real integration
+(both servers, the API through the proxy) was verified by the coordinator after the branches were
+combined. That check caught one bug (docs routes reported as `unmatched` in metrics), which was
+fixed on the T1 branch before merging.
+
+### D21 — uv for Python environments and dependencies
+**Decision:** `uv` manages the virtualenv (`backend/.venv`), dependencies (`pyproject.toml`), the
+lockfile (`uv.lock`, committed) and the Python version (`requires-python >= 3.11`).
+**Why:** One fast tool instead of `venv` + `pip` + `requirements.txt`, with a real lockfile so
+reviewers get exactly the same versions. The Docker image runs the same `uv sync --frozen`, so local
+and container environments match.
+**Not chosen:** pip/requirements.txt (no real lock), Poetry (slower, heavier for this scope).
