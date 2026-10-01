@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Query
@@ -8,7 +8,7 @@ from sqlmodel import Session, col, func, select
 
 from app.db import SessionDep
 from app.errors import ApiError
-from app.models import EvaluationRead, Flag, FlagCreate, FlagEvaluation, FlagRead, FlagUpdate, utcnow
+from app.models import EvaluationRead, EvaluationTimeseries, Flag, FlagCreate, FlagEvaluation, FlagRead, FlagUpdate, utcnow
 
 logger = logging.getLogger("app.admin")
 router = APIRouter(prefix="/api", tags=["admin"])
@@ -85,3 +85,31 @@ def delete_flag(key: str, session: SessionDep) -> None:
 def list_evaluations(session: SessionDep, limit: Annotated[int, Query(ge=1, le=200)] = 50):
     stmt = select(FlagEvaluation).order_by(col(FlagEvaluation.id).desc()).limit(limit)
     return session.exec(stmt).all()
+
+
+@router.get("/evaluations/timeseries", response_model=EvaluationTimeseries)
+def evaluation_timeseries(session: SessionDep, minutes: Annotated[int, Query(ge=5, le=180)] = 30):
+    """Evaluations per minute and flag over the last `minutes`, zero-filled, oldest bucket first."""
+    end = utcnow().replace(second=0, microsecond=0)
+    start = end - timedelta(minutes=minutes - 1)
+    # ponytail: SQLite-specific bucketing (strftime); use date_trunc on Postgres.
+    minute = func.strftime("%Y-%m-%d %H:%M:00", FlagEvaluation.evaluated_at)
+    stmt = (
+        select(FlagEvaluation.flag_key, minute, func.count())
+        .where(FlagEvaluation.evaluated_at >= start)
+        .group_by(FlagEvaluation.flag_key, minute)
+    )
+    series: dict[str, list[int]] = {}
+    for key, bucket, count in session.exec(stmt):
+        # Stored values are UTC without tzinfo; re-attach it before comparing.
+        bucket_at = datetime.strptime(bucket, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+        index = int((bucket_at - start).total_seconds() // 60)
+        if 0 <= index < minutes:
+            series.setdefault(key, [0] * minutes)[index] = count
+    existing = set(session.exec(select(Flag.key).where(col(Flag.key).in_(series))))
+    return EvaluationTimeseries(
+        bucket_seconds=60,
+        buckets=[start + timedelta(minutes=i) for i in range(minutes)],
+        series=dict(sorted(series.items())),
+        unknown_keys=sorted(set(series) - existing),
+    )

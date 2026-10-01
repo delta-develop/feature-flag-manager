@@ -86,3 +86,10 @@ class EvaluationRead(SQLModel):
 
 class EvaluateResponse(SQLModel):
     flags: dict[str, bool]
+
+
+class EvaluationTimeseries(SQLModel):
+    bucket_seconds: int
+    buckets: list[UtcDatetime]
+    series: dict[str, list[int]]
+    unknown_keys: list[str]
